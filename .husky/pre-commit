@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🔨 构建项目..."
+echo "🔨 build project..."
 npm run build
 
-echo "🧪 运行测试..."
+echo "🧪 run test..."
 npm test
