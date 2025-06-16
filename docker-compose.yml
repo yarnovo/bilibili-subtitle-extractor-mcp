@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  bilibili-subtitle-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bilibili-subtitle-extractor-mcp
+    ports:
+      - "3456:3456"  # HTTP MCP接口端口
+      - "8080:8080"  # WebSocket端口（用于与浏览器插件通信）
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "--input-type=module", "-e", "import http from 'http'; http.get('http://localhost:3456/', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: bilibili-subtitle-extractor-network 

@@ -52,12 +52,11 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "express": "^5.1.0",
     "mitt": "^3.0.1",
-    "node-fetch": "^3.3.2",
     "uuid": "^11.1.0",
     "ws": "^8.18.2",
     "zod": "^3.25.63"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

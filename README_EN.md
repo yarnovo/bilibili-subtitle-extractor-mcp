@@ -1,232 +1,313 @@
 # Bilibili Subtitle Extractor MCP Tool
 
-This is a Model Context Protocol (MCP) tool for extracting subtitle content from Bilibili videos. **This tool requires a browser extension to function and cannot run independently.**
+## 📖 Project Background
 
-## Core Architecture
+With the growing popularity of AI assistants, users frequently need to extract subtitle content from Bilibili videos for analysis, summarization, or learning. This tool, based on the Model Context Protocol (MCP) standard, provides a simple yet powerful solution that enables AI assistants to directly retrieve subtitle data from Bilibili videos.
 
-### WebSocket Connection Architecture
-- **Browser Extension**: Runs in background, pushes user authentication data to MCP service via WebSocket
-- **MCP Server**: Receives plugin authentication data and provides subtitle extraction service
-- **Auto-Reconnect**: Plugin automatically reconnects when connection drops (5-second intervals)
-- **Data Sync**: Plugin pushes authentication data every 30 seconds to keep session valid
+## ✨ Features
 
-### Workflow
-1. User logs into Bilibili account in browser
-2. Install and enable browser extension
-3. Extension automatically connects to MCP server (WebSocket port 3456)
-4. Extension periodically pushes authentication data to server
-5. MCP tool uses stored authentication data to extract subtitles
+- 🎯 **Precise Extraction**: Extract complete subtitle content from any Bilibili video
+- ⚡ **Real-time Communication**: WebSocket-based browser extension communication architecture
+- 🔗 **Timestamp Links**: Support for generating video jump links with timestamps
+- 🐋 **Docker Deployment**: Multiple deployment options with one-click service startup
+- 🔌 **MCP Standard**: Fully compatible with Model Context Protocol specifications
+- 🌐 **Cross-platform**: Chrome/Edge browser extension support
+- 📊 **Status Monitoring**: Real-time service status and plugin connection monitoring
 
-## Prerequisites
+## 🚀 Installation and Usage
 
-### ⚠️ Important Notice
-**This tool does not provide traditional login methods. You must install the browser extension.**
+### Prerequisites
+⚠️ **Important Notice**: This tool requires a browser extension and cannot run independently.
 
-### System Requirements
-- Node.js >= 18
-- Chrome/Edge browser extension support
-- Valid Bilibili account login status
+**System Requirements:**
+- Node.js >= 20.0.0
+- Docker & Docker Compose (recommended)
+- Chrome/Edge browser
+- Valid Bilibili account
 
-### Extension Installation
-1. Build browser extension:
+**Browser Extension Installation:**
+
+The extension provides two installation methods:
+
+1. **Recommended Method**: Download pre-built version
+   - Visit extension release page: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/releases)
+   - Download the latest version archive
+   - Extract and load in Chrome
+
+2. **Local Build Method**:
    ```bash
-   cd bilibili-subtitle
+   # Clone extension project
+   git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
+   cd bilibili-subtitle-extractor-extension
+   
+   # Install dependencies and build
    npm install
    npm run build
    ```
 
-2. Load extension in Chrome/Edge:
-   - Open extension management page
+3. **Load Extension in Browser**:
+   - Open extension management page (chrome://extensions/)
    - Enable "Developer mode"
    - Click "Load unpacked extension"
-   - Select `bilibili-subtitle/dist` directory
+   - Select extracted folder or built `dist` directory
 
-3. Ensure extension is enabled and running on Bilibili pages
+### Option 1: Docker Image Deployment (Recommended)
 
-## Installation and Usage
+#### 1. Direct Official Image Run
+```bash
+# Pull and run official image
+docker run -d \
+  --name bilibili-subtitle-extractor \
+  -p 3456:3456 \
+  -p 8080:8080 \
+  --restart unless-stopped \
+  yarnovo/bilibili-subtitle-extractor-mcp:latest
+```
 
-### 1. Install Dependencies
+#### 2. Using Docker Compose
+Create `docker-compose.yml` file:
+```yaml
+version: '3.8'
+services:
+  bilibili-subtitle-extractor:
+    image: yarnovo/bilibili-subtitle-extractor-mcp:latest
+    container_name: bilibili-subtitle-extractor-mcp
+    ports:
+      - "3456:3456"  # HTTP MCP interface port
+      - "8080:8080"  # WebSocket port
+    restart: unless-stopped
+```
+
+Start service:
+```bash
+docker-compose up -d
+```
+
+### Option 2: Local Docker Build Deployment
+
+```bash
+# Clone project
+git clone https://github.com/yarnovo/bilibili-subtitle-extractor-mcp.git
+cd bilibili-subtitle-extractor-mcp
+
+# Build and start using Docker Compose
+docker-compose up -d --build
+```
+
+### Option 3: Local Development Deployment
+
+#### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Build Project
+#### 2. Build Project
 ```bash
 npm run build
 ```
 
-### 3. Start MCP Server
+#### 3. Start Service
 ```bash
-node dist/bin/index.js
+npm start
+# or run directly
+node dist/main/index.js
 ```
 
-After startup, you'll see:
+### 🔍 Verify Installation
+
+After service startup, you'll see:
 ```
-Bilibili字幕提取MCP服务器已启动 (WebSocket模式)
-WebSocket服务器运行在端口: 3456
-请确保安装并启用浏览器插件以建立连接 (Bilibili Subtitle Extractor MCP Server started (WebSocket mode)
-WebSocket server running on port: 3456
-Please ensure browser extension is installed and enabled)
+🚀 启动Bilibili字幕提取MCP服务器...
+🔌 WebSocket服务器: ws://localhost:8080
+✅ 服务器启动完成！
+📡 HTTP服务器: http://localhost:3456
+📋 MCP接口: http://localhost:3456/mcp
+📊 状态页面: http://localhost:3456/
 ```
 
-### 4. Verify Extension Connection
-Visit any Bilibili video page in your browser, and the extension will automatically attempt to connect to the MCP server.
+**Verify Connection:**
+1. Visit any Bilibili video page, extension will automatically connect to WebSocket server
+2. Open browser developer tools, check Console for connection success messages
+3. Visit `http://localhost:3456/` to check service status
 
-## Test Simulator
-
-A plugin simulator is provided for testing WebSocket connections:
+### 📋 Service Management
 
 ```bash
-# Start simulator
-node simulate-plugin.js
+# Check service status
+docker-compose ps
 
-# View help
-node simulate-plugin.js --help
+# View logs
+docker-compose logs -f
 
-# Send heartbeat test
-node simulate-plugin.js --ping
+# Stop service
+docker-compose down
 
-# Immediate data sync
-node simulate-plugin.js --sync
+# Restart service
+docker-compose restart
 ```
 
-## Available Tools
+## 🛠 Available Tools
 
 ### 1. extract_bilibili_subtitles
-Extract subtitles from Bilibili videos
+Extract subtitles from Bilibili videos. **Requires browser extension.**
 
 **Parameters:**
-- `video_url` (required): Bilibili video URL
-- `format` (optional): Output format options:
-  - `text`: Plain text format (default)
-  - `srt`: SRT subtitle file format
-  - `vtt`: WebVTT subtitle file format
-  - `json`: JSON format
+- `video_url` (required): Bilibili video URL (complete link with BV ID)
+- `timeout` (optional): Timeout in milliseconds, default 30 seconds
 
 **Example Usage:**
 ```json
 {
-  "video_url": "https://www.bilibili.com/video/BV1example",
-  "format": "srt"
+  "video_url": "https://www.bilibili.com/video/BV1234567890",
+  "timeout": 30000
 }
 ```
 
-### 2. get_auth_status
-Get plugin authentication status
-
-**Return Information:**
-- `hasAuth`: Whether valid authentication data exists
-- `isLoggedIn`: Whether user is logged into Bilibili
-- `username`: Username (if available)
-- `lastUpdate`: Last update time
-- `wsConnections`: WebSocket connection count
-- `message`: Status description
-
-## Output Format Examples
-
-### Text Format
-```
-Video Title
-Author: Uploader Name
-BV ID: BV1example
-
-Subtitle content line 1
-Subtitle content line 2
-...
-```
-
-### SRT Format
-```
-1
-00:00:01,000 --> 00:00:03,000
-Subtitle content line 1
-
-2
-00:00:03,000 --> 00:00:05,000
-Subtitle content line 2
-```
-
-### JSON Format
+**Return Data Format:**
 ```json
 {
-  "title": "Video Title",
-  "author": "Uploader Name", 
-  "bvid": "BV1example",
-  "subtitleLanguage": "Chinese",
-  "subtitleCount": 100,
-  "format": "json",
-  "content": "{\"videoInfo\":{...},\"subtitles\":[...]}"
+  "success": true,
+  "data": {
+    "title": "Video Title",
+    "author": "Uploader Name",
+    "url": "Video URL",
+    "ctime": timestamp,
+    "subtitles": [
+      {
+        "from": start_time_seconds,
+        "to": end_time_seconds,
+        "content": "Subtitle content"
+      }
+    ]
+  },
+  "renderingNote": "Subtitle rendering suggestions..."
 }
 ```
 
-## Error Handling
+### 2. get_connection_status
+Get connection status with browser extension
+
+**Return Information:**
+- `pluginConnected`: Whether plugin is connected
+- `pendingRequests`: Number of pending requests
+- `message`: Connection status description
+- `timestamp`: Status check timestamp
+
+## 📝 Subtitle Rendering Suggestions
+
+The returned subtitle data contains timestamp information. It's recommended to display subtitles with timestamp jump links:
+
+```
+[00:15](https://www.bilibili.com/video/BV1234567890?t=15) Hello everyone, welcome to my programming tutorial
+[00:18](https://www.bilibili.com/video/BV1234567890?t=18) Today we will learn how to get started with programming
+[01:07](https://www.bilibili.com/video/BV1234567890?t=67) Python is a very beginner-friendly language
+```
+
+**Format Description:**
+- `[MM:SS]`: Formatted timestamp (converted from from field)
+- Seconds in link come from from field value (rounded down)
+- Users can click timestamp to jump directly to corresponding video time
+
+## ❗ Error Handling
 
 ### Common Errors and Solutions
 
-1. **"Plugin authentication data not detected"**
+1. **"Browser extension not connected"**
    - Confirm browser extension is installed and enabled
    - Check if extension is working properly on Bilibili pages
+   - Visit `http://localhost:3456/` to check connection status
    - Review browser console for connection errors
 
-2. **"User not logged into Bilibili"**
-   - Log into Bilibili account in browser
-   - Refresh Bilibili page to let extension re-detect login status
+2. **"Subtitle extraction timeout"**
+   - Check network connection
+   - Confirm video URL format is correct (contains BV ID)
+   - Try increasing timeout parameter value
+   - Ensure extension is running properly on Bilibili pages
 
-3. **"WebSocket connection failed"**
-   - Confirm MCP server is running
-   - Check if port 3456 is occupied
-   - Review firewall settings
+3. **"Docker service startup failed"**
+   - Confirm Docker and Docker Compose are installed
+   - Check if ports 3456 and 8080 are occupied
+   - View Docker logs: `docker-compose logs -f`
 
-## Technical Architecture
+## 🏗 Core Architecture
+
+### Service Architecture
+- **HTTP MCP Server**: Provides standard MCP protocol interface (port 3456)
+- **WebSocket Server**: Communicates with browser extension (port 8080)
+- **Browser Extension**: Executes subtitle extraction on Bilibili pages, pushes results via WebSocket
 
 ### WebSocket Communication Protocol
 
-#### Client → Server
+#### Extension → Server (Subtitle Extraction Results)
 ```json
 {
-  "type": "auth_data",
+  "type": "SUBTITLE_RESULT",
+  "requestId": "uuid",
   "data": {
-    "cookies": [...],
-    "userAgent": "...",
-    "userInfo": { "uid": 123, "uname": "User" },
-    "isLoggedIn": true,
-    "currentUrl": "...",
-    "timestamp": 1234567890
+    "title": "Video Title",
+    "author": "Uploader Name",
+    "url": "Video URL",
+    "ctime": timestamp,
+    "subtitles": [...]
   }
 }
 ```
 
-#### Server → Client
+#### Server → Extension (Subtitle Extraction Request)
 ```json
 {
-  "type": "connected",
-  "message": "Connection successful"
+  "type": "GET_SUBTITLE",
+  "videoUrl": "https://...",
+  "requestId": "uuid"
 }
 ```
 
-### Authentication Data Expiration Mechanism
-- Authentication data validity: 5 minutes
-- Plugin push interval: 30 seconds
-- Reconnection interval: 5 seconds
+### Docker Deployment Architecture
+- **Multi-stage Build**: Build stage compiles TypeScript, runtime stage contains only necessary files
+- **Port Mapping**: 3456 (HTTP), 8080 (WebSocket)
+- **Health Check**: Regular HTTP service availability checks
+- **Log Management**: Limits log file size and count
 
-## Development and Debugging
+## 🔧 Development and Debugging
 
-### Enable Debug Mode
+### Local Development
 ```bash
-DEBUG=bilibili-subtitle node dist/bin/index.js
-```
+# Install dependencies
+npm install
 
-### Extension Development
-Extension source code is located in the `bilibili-subtitle/` directory, main files:
-- `src/chrome/background.ts`: Extension background script
-- `src/chrome/authService.ts`: Authentication service WebSocket client
+# Build project
+npm run build
 
-### Testing
-```bash
+# Start development mode
+npm start
+
+# Run tests
 npm test
 ```
 
-## Contributing
+### Docker Development
+```bash
+# Build image
+docker-compose build
+
+# Start service (development mode)
+docker-compose up
+
+# View logs
+docker-compose logs -f bilibili-subtitle-extractor
+```
+
+### Extension Development
+Extension source code is in a separate repository:
+- Extension repository: https://github.com/yarnovo/bilibili-subtitle-extractor-extension
+- Build extension: `npm run build`
+- Load into browser for testing
+
+### Status Monitoring
+- Visit `http://localhost:3456/` to check service status
+- Use `get_connection_status` tool to check plugin connection
+
+## 🤝 Contributing
 
 1. Fork the project
 2. Create a feature branch
@@ -234,6 +315,6 @@ npm test
 4. Push to the branch
 5. Create a Pull Request
 
-## License
+## 📄 License
 
 MIT License - See [LICENSE](LICENSE) file for details 

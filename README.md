@@ -1,230 +1,313 @@
 # Bilibili字幕提取MCP工具
 
-这是一个Model Context Protocol (MCP)工具，用于从Bilibili视频中提取字幕内容。**本工具需要配合浏览器插件使用，无法独立运行。**
+## 📖 项目背景
 
-## 核心架构
+随着AI助手的普及，用户经常需要从Bilibili视频中提取字幕内容进行分析、总结或学习。本工具基于Model Context Protocol (MCP)标准，提供了一个简单而强大的解决方案，让AI助手能够直接获取B站视频的字幕数据。
 
-### WebSocket连接架构
-- **浏览器插件**: 在后台运行，通过WebSocket连接向MCP服务推送用户认证数据
-- **MCP服务器**: 接收插件认证数据，提供字幕提取服务
-- **自动重连**: 插件连接断开时自动重连（5秒间隔）
-- **数据同步**: 插件每30秒推送一次认证数据保持会话有效
+## ✨ 功能特性
 
-### 工作流程
-1. 用户在浏览器中登录B站账号
-2. 安装并启用浏览器插件
-3. 插件自动连接MCP服务器(WebSocket端口3456)
-4. 插件定期推送认证数据到服务器
-5. MCP工具使用存储的认证数据提取字幕
+- 🎯 **精准提取**: 从任意Bilibili视频中提取完整字幕内容
+- ⚡ **实时通信**: 基于WebSocket的浏览器插件通信架构
+- 🔗 **时间戳链接**: 支持生成带时间戳的视频跳转链接
+- 🐋 **Docker部署**: 支持多种部署方式，一键启动服务
+- 🔌 **MCP标准**: 完全兼容Model Context Protocol规范
+- 🌐 **跨平台**: 支持Chrome/Edge浏览器扩展
+- 📊 **状态监控**: 实时查看服务状态和插件连接情况
 
-## 必要条件
+## 🚀 安装和使用
 
-### ⚠️ 重要说明
-**本工具不提供传统登录方式，必须安装浏览器插件才能使用。**
+### 必要条件
+⚠️ **重要说明**: 本工具需要配合浏览器插件使用，无法独立运行。
 
-### 系统要求
-- Node.js >= 18
-- 支持Chrome/Edge的浏览器插件
-- 有效的Bilibili账号登录状态
+**系统要求:**
+- Node.js >= 20.0.0
+- Docker & Docker Compose (推荐)
+- Chrome/Edge浏览器
+- 有效的Bilibili账号
 
-### 插件安装
-1. 构建浏览器插件：
+**浏览器插件安装:**
+
+插件提供两种安装方式：
+
+1. **推荐方式**: 直接下载已构建版本
+   - 访问插件发布页面: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/releases)
+   - 下载最新版本的压缩包
+   - 解压后在Chrome中加载扩展程序
+
+2. **本地构建方式**:
    ```bash
-   cd bilibili-subtitle
+   # 克隆插件项目
+   git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
+   cd bilibili-subtitle-extractor-extension
+   
+   # 安装依赖并构建
    npm install
    npm run build
    ```
 
-2. 在Chrome/Edge中加载插件：
-   - 打开扩展程序管理页面
+3. **在浏览器中加载插件**:
+   - 打开扩展程序管理页面 (chrome://extensions/)
    - 启用"开发者模式"
    - 点击"加载已解压的扩展程序"
-   - 选择 `bilibili-subtitle/dist` 目录
+   - 选择解压后的文件夹或构建后的`dist`目录
 
-3. 确保插件已启用并在B站页面运行
+### 方式一：Docker镜像部署（推荐）
 
-## 安装和使用
+#### 1. 直接运行官方镜像
+```bash
+# 拉取并运行官方镜像
+docker run -d \
+  --name bilibili-subtitle-extractor \
+  -p 3456:3456 \
+  -p 8080:8080 \
+  --restart unless-stopped \
+  yarnovo/bilibili-subtitle-extractor-mcp:latest
+```
 
-### 1. 安装依赖
+#### 2. 使用Docker Compose
+创建 `docker-compose.yml` 文件：
+```yaml
+version: '3.8'
+services:
+  bilibili-subtitle-extractor:
+    image: yarnovo/bilibili-subtitle-extractor-mcp:latest
+    container_name: bilibili-subtitle-extractor-mcp
+    ports:
+      - "3456:3456"  # HTTP MCP接口端口
+      - "8080:8080"  # WebSocket端口
+    restart: unless-stopped
+```
+
+启动服务：
+```bash
+docker-compose up -d
+```
+
+### 方式二：本地Docker构建部署
+
+```bash
+# 克隆项目
+git clone https://github.com/yarnovo/bilibili-subtitle-extractor-mcp.git
+cd bilibili-subtitle-extractor-mcp
+
+# 使用Docker Compose构建并启动
+docker-compose up -d --build
+```
+
+### 方式三：本地开发部署
+
+#### 1. 安装依赖
 ```bash
 npm install
 ```
 
-### 2. 构建项目
+#### 2. 构建项目
 ```bash
 npm run build
 ```
 
-### 3. 启动MCP服务器
+#### 3. 启动服务
 ```bash
-node dist/bin/index.js
+npm start
+# 或直接运行
+node dist/main/index.js
 ```
 
-启动后会看到：
+### 🔍 验证安装
+
+服务启动后，你将看到：
 ```
-Bilibili字幕提取MCP服务器已启动 (WebSocket模式)
-WebSocket服务器运行在端口: 3456
-请确保安装并启用浏览器插件以建立连接
+🚀 启动Bilibili字幕提取MCP服务器...
+🔌 WebSocket服务器: ws://localhost:8080
+✅ 服务器启动完成！
+📡 HTTP服务器: http://localhost:3456
+📋 MCP接口: http://localhost:3456/mcp
+📊 状态页面: http://localhost:3456/
 ```
 
-### 4. 验证插件连接
-在浏览器中访问任意B站视频页面，插件会自动尝试连接MCP服务器。
+**验证连接:**
+1. 访问任意B站视频页面，插件会自动连接到WebSocket服务器
+2. 打开浏览器开发者工具，查看Console是否有连接成功的消息
+3. 访问 `http://localhost:3456/` 查看服务状态
 
-## 测试模拟器
-
-为了测试WebSocket连接，提供了插件模拟器：
+### 📋 服务管理
 
 ```bash
-# 启动模拟器
-node simulate-plugin.js
+# 查看服务状态
+docker-compose ps
 
-# 查看帮助
-node simulate-plugin.js --help
+# 查看日志
+docker-compose logs -f
 
-# 发送心跳测试
-node simulate-plugin.js --ping
+# 停止服务
+docker-compose down
 
-# 立即同步数据
-node simulate-plugin.js --sync
+# 重启服务
+docker-compose restart
 ```
 
-## 可用工具
+## 🛠 可用工具
 
 ### 1. extract_bilibili_subtitles
-从Bilibili视频中提取字幕
+从Bilibili视频中提取字幕。**需要浏览器插件配合使用。**
 
 **参数：**
-- `video_url` (必需): Bilibili视频URL
-- `format` (可选): 输出格式，可选值：
-  - `text`: 纯文本格式 (默认)
-  - `srt`: SRT字幕文件格式
-  - `vtt`: WebVTT字幕文件格式
-  - `json`: JSON格式
+- `video_url` (必需): Bilibili视频URL（完整链接，包含BV号）
+- `timeout` (可选): 超时时间（毫秒），默认30秒
 
 **示例使用：**
 ```json
 {
-  "video_url": "https://www.bilibili.com/video/BV1example",
-  "format": "srt"
+  "video_url": "https://www.bilibili.com/video/BV1234567890",
+  "timeout": 30000
 }
 ```
 
-### 2. get_auth_status
-获取插件认证状态
-
-**返回信息：**
-- `hasAuth`: 是否有有效认证数据
-- `isLoggedIn`: 用户是否已登录B站
-- `username`: 用户名（如有）
-- `lastUpdate`: 最后更新时间
-- `wsConnections`: WebSocket连接数
-- `message`: 状态说明
-
-## 输出格式示例
-
-### Text格式
-```
-视频标题
-作者: UP主名称
-BV号: BV1example
-
-字幕内容第一行
-字幕内容第二行
-...
-```
-
-### SRT格式
-```
-1
-00:00:01,000 --> 00:00:03,000
-字幕内容第一行
-
-2
-00:00:03,000 --> 00:00:05,000
-字幕内容第二行
-```
-
-### JSON格式
+**返回数据格式：**
 ```json
 {
-  "title": "视频标题",
-  "author": "UP主名称", 
-  "bvid": "BV1example",
-  "subtitleLanguage": "中文",
-  "subtitleCount": 100,
-  "format": "json",
-  "content": "{\"videoInfo\":{...},\"subtitles\":[...]}"
+  "success": true,
+  "data": {
+    "title": "视频标题",
+    "author": "UP主名称",
+    "url": "视频URL",
+    "ctime": 创建时间戳,
+    "subtitles": [
+      {
+        "from": 开始时间(秒),
+        "to": 结束时间(秒),
+        "content": "字幕内容"
+      }
+    ]
+  },
+  "renderingNote": "字幕渲染建议..."
 }
 ```
 
-## 错误处理
+### 2. get_connection_status
+获取与浏览器插件的连接状态
+
+**返回信息：**
+- `pluginConnected`: 插件是否已连接
+- `pendingRequests`: 待处理请求数量
+- `message`: 连接状态说明
+- `timestamp`: 状态检查时间
+
+## 📝 字幕渲染建议
+
+工具返回的字幕数据包含时间戳信息，建议为用户展示带时间戳跳转链接的格式：
+
+```
+[00:15](https://www.bilibili.com/video/BV1234567890?t=15) 大家好，欢迎来到我的编程教程
+[00:18](https://www.bilibili.com/video/BV1234567890?t=18) 今天我们要学习如何入门编程
+[01:07](https://www.bilibili.com/video/BV1234567890?t=67) Python是一个非常适合初学者的语言
+```
+
+**格式说明：**
+- `[MM:SS]`: 格式化的时间戳（根据from字段转换）
+- 链接中的秒数来自from字段的值（向下取整）
+- 用户点击时间戳可直接跳转到视频对应时间点
+
+## ❗ 错误处理
 
 ### 常见错误及解决方案
 
-1. **"未检测到插件认证数据"**
+1. **"浏览器插件未连接"**
    - 确认浏览器插件已安装并启用
    - 检查插件是否在B站页面正常工作
+   - 访问 `http://localhost:3456/` 查看连接状态
    - 查看浏览器控制台是否有连接错误
 
-2. **"用户未登录B站"**
-   - 在浏览器中登录B站账号
-   - 刷新B站页面让插件重新检测登录状态
+2. **"字幕提取超时"**
+   - 检查网络连接是否正常
+   - 确认视频URL格式正确（包含BV号）
+   - 尝试增加timeout参数值
+   - 确认插件在B站页面正常运行
 
-3. **"WebSocket连接失败"**
-   - 确认MCP服务器已启动
-   - 检查端口3456是否被占用
-   - 查看防火墙设置
+3. **"Docker服务启动失败"**
+   - 确认Docker和Docker Compose已安装
+   - 检查端口3456和8080是否被占用
+   - 查看Docker日志：`docker-compose logs -f`
 
-## 技术架构
+## 🏗 核心架构
+
+### 服务架构
+- **HTTP MCP服务器**: 提供标准MCP协议接口 (端口3456)
+- **WebSocket服务器**: 与浏览器插件通信 (端口8080)
+- **浏览器插件**: 在B站页面执行字幕提取，通过WebSocket推送结果
 
 ### WebSocket通信协议
 
-#### 客户端 → 服务器
+#### 插件 → 服务器 (字幕提取结果)
 ```json
 {
-  "type": "auth_data",
+  "type": "SUBTITLE_RESULT",
+  "requestId": "uuid",
   "data": {
-    "cookies": [...],
-    "userAgent": "...",
-    "userInfo": { "uid": 123, "uname": "用户" },
-    "isLoggedIn": true,
-    "currentUrl": "...",
-    "timestamp": 1234567890
+    "title": "视频标题",
+    "author": "UP主名称",
+    "url": "视频URL",
+    "ctime": 时间戳,
+    "subtitles": [...]
   }
 }
 ```
 
-#### 服务器 → 客户端
+#### 服务器 → 插件 (字幕提取请求)
 ```json
 {
-  "type": "connected",
-  "message": "连接成功"
+  "type": "GET_SUBTITLE",
+  "videoUrl": "https://...",
+  "requestId": "uuid"
 }
 ```
 
-### 认证数据过期机制
-- 认证数据有效期：5分钟
-- 插件推送间隔：30秒
-- 重连间隔：5秒
+### Docker部署架构
+- **多阶段构建**: 构建阶段编译TypeScript，运行阶段仅包含必要文件
+- **端口映射**: 3456 (HTTP)、8080 (WebSocket)
+- **健康检查**: 定期检查HTTP服务可用性
+- **日志管理**: 限制日志文件大小和数量
 
-## 开发调试
+## 🔧 开发调试
 
-### 启用调试模式
+### 本地开发
 ```bash
-DEBUG=bilibili-subtitle node dist/bin/index.js
-```
+# 安装依赖
+npm install
 
-### 插件开发
-插件源码位于 `bilibili-subtitle/` 目录，主要文件：
-- `src/chrome/background.ts`: 插件后台脚本
-- `src/chrome/authService.ts`: 认证服务WebSocket客户端
+# 构建项目
+npm run build
 
-### 测试
-```bash
+# 启动开发模式
+npm start
+
+# 运行测试
 npm test
 ```
 
-## 贡献指南
+### Docker开发
+```bash
+# 构建镜像
+docker-compose build
+
+# 启动服务（开发模式）
+docker-compose up
+
+# 查看日志
+docker-compose logs -f bilibili-subtitle-extractor
+```
+
+### 插件开发
+插件源码位于独立仓库：
+- 插件仓库：https://github.com/yarnovo/bilibili-subtitle-extractor-extension
+- 构建插件：`npm run build`
+- 加载到浏览器进行测试
+
+### 状态监控
+- 访问 `http://localhost:3456/` 查看服务状态
+- 使用 `get_connection_status` 工具检查插件连接
+
+## 🤝 贡献指南
 
 1. Fork项目
 2. 创建功能分支
@@ -232,6 +315,6 @@ npm test
 4. 推送到分支
 5. 创建Pull Request
 
-## 许可证
+## 📄 许可证
 
 MIT License - 详见 [LICENSE](LICENSE) 文件 

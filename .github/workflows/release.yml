@@ -1,4 +1,4 @@
-name: Test and Release
+name: Test, Build and Release Docker Image
 
 # 触发条件
 on:
@@ -20,6 +20,11 @@ permissions:
   contents: write  # 创建 release 需要写权限
   packages: write  # 发布包需要写权限
 
+# 环境变量
+env:
+  DOCKER_IMAGE: yarnovo/bilibili-subtitle-extractor-mcp
+  PLATFORMS: linux/amd64,linux/arm64
+
 # 定义作业
 jobs:
   # 测试作业 - 总是运行
@@ -29,7 +34,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
     
     steps:
       # 检出代码
@@ -64,11 +69,37 @@ jobs:
           fi
           echo "✅ Build successful"
 
-  # 发布作业 - 仅在版本标签时运行
-  publish:
-    name: Publish to NPM
+  # Docker构建作业
+  docker-build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
+    
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # 设置Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # 构建测试镜像（不推送）
+      - name: Build test image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ env.PLATFORMS }}
+          push: false
+          tags: ${{ env.DOCKER_IMAGE }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 发布Docker镜像作业 - 仅在版本标签时运行
+  docker-publish:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, docker-build]
     # 只有在 push 事件且标签匹配 v*.*.* 格式时才运行
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     
@@ -77,24 +108,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # 设置 Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # 设置Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # 登录到Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          node-version: '20.x'
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org/'
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       
-      # 安装依赖
-      - name: Install dependencies
-        run: npm ci
-      
-      # 构建项目
-      - name: Build project
-        run: npm run build
-      
-      # 验证版本标签与 package.json 匹配
-      - name: Verify version tag
+      # 提取版本信息
+      - name: Extract version
+        id: version
         run: |
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -107,13 +134,28 @@ jobs:
             exit 1
           fi
           
+          echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version tag matches package.json"
       
-      # 发布到 NPM
-      - name: Publish to NPM
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # 构建并推送Docker镜像
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=Bilibili Subtitle Extractor MCP
+            org.opencontainers.image.description=MCP server for extracting subtitles from Bilibili videos
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
       
       # 创建 GitHub Release
       - name: Create GitHub Release
@@ -124,30 +166,48 @@ jobs:
           body: |
             ## 🚀 Release ${{ github.ref_name }}
             
-            ### 📦 安装
+            ### 🐋 Docker 镜像
             ```bash
-            npx unreal-engine-docs-mcp
+            # 拉取最新版本
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            docker pull ${{ env.DOCKER_IMAGE }}:latest
+            
+            # 直接运行
+            docker run -d \
+              --name bilibili-subtitle-extractor \
+              -p 3456:3456 \
+              -p 8080:8080 \
+              --restart unless-stopped \
+              ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
             ```
             
-            ### 🔧 MCP 配置
-            ```json
-            {
-              "mcpServers": {
-                "unreal-engine-docs": {
-                  "command": "npx",
-                  "args": ["-y", "unreal-engine-docs-mcp"]
-                }
-              }
-            }
+            ### 🔧 Docker Compose 配置
+            ```yaml
+            version: '3.8'
+            services:
+              bilibili-subtitle-extractor:
+                image: ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+                container_name: bilibili-subtitle-extractor-mcp
+                ports:
+                  - "3456:3456"  # HTTP MCP接口端口
+                  - "8080:8080"  # WebSocket端口
+                restart: unless-stopped
             ```
             
             ### 📋 功能
-            - 📄 获取所有虚幻引擎文档列表
-            - 🌐 支持中文文档
-            - 🚀 简单易用，无需分页
+            - 🎯 从Bilibili视频中提取字幕内容
+            - ⚡ 基于WebSocket的浏览器插件通信
+            - 🔗 支持生成带时间戳的视频跳转链接
+            - 🔌 完全兼容MCP标准
+            - 📊 实时状态监控
+            
+            ### 🔗 相关链接
+            - 📦 Docker镜像: [Docker Hub](https://hub.docker.com/r/${{ env.DOCKER_IMAGE }})
+            - 🔌 浏览器插件: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/releases)
+            - 📖 完整文档: [README.md](./README.md)
             
             ---
-            **完整更新日志请查看 [CHANGELOG.md](./CHANGELOG.md)**
+            **⚠️ 注意**: 需要安装配套的浏览器插件才能正常使用
           draft: false
           prerelease: false
 
@@ -155,7 +215,7 @@ jobs:
   status-check:
     name: Status Check
     runs-on: ubuntu-latest
-    needs: [test, publish]
+    needs: [test, docker-build, docker-publish]
     if: always()
     
     steps:
@@ -167,11 +227,19 @@ jobs:
           fi
           echo "✅ All tests passed"
       
+      - name: Check docker build results
+        run: |
+          if [ "${{ needs.docker-build.result }}" != "success" ]; then
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+          echo "✅ Docker build successful"
+      
       - name: Check publish results
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: |
-          if [ "${{ needs.publish.result }}" != "success" ]; then
-            echo "❌ Publish failed"
+          if [ "${{ needs.docker-publish.result }}" != "success" ]; then
+            echo "❌ Docker publish failed"
             exit 1
           fi
-          echo "✅ Published successfully" 
+          echo "✅ Docker image published successfully" 

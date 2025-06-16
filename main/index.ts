@@ -458,6 +458,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // 启动服务器
 const HTTP_PORT = 3456;
+const SHUTDOWN_TIMEOUT = 5000; // 5秒超时
 let httpServer: any = null;
 
 async function gracefulShutdown(signal: string) {
@@ -466,15 +467,22 @@ async function gracefulShutdown(signal: string) {
   wsManager.stop();
   
   if (httpServer) {
-    httpServer.close(() => {
+    const timeout = setTimeout(() => {
+      console.log('⚠️ 强制关闭服务器 - 超时');
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT);
+    
+    httpServer.close((err: any) => {
+      clearTimeout(timeout);
+      
+      if (err) {
+        console.error('❌ 服务器关闭时发生错误:', err);
+        process.exit(1);
+      }
+      
       console.log('✅ HTTP服务器已关闭');
       process.exit(0);
     });
-    
-    setTimeout(() => {
-      console.log('⚠️ 强制关闭服务器');
-      process.exit(1);
-    }, 5000);
   } else {
     process.exit(0);
   }
