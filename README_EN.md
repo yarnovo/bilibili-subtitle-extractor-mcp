@@ -30,15 +30,15 @@ With the growing popularity of AI assistants, users frequently need to extract s
 The extension provides two installation methods:
 
 1. **Recommended Method**: Download pre-built version
-   - Visit extension release page: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/releases)
+   - Visit extension release page: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle/releases)
    - Download the latest version archive
    - Extract and load in Chrome
 
 2. **Local Build Method**:
    ```bash
    # Clone extension project
-   git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
-   cd bilibili-subtitle-extractor-extension
+   git clone https://github.com/yarnovo/bilibili-subtitle.git
+   cd bilibili-subtitle
    
    # Install dependencies and build
    npm install
@@ -299,7 +299,7 @@ docker-compose logs -f bilibili-subtitle-extractor
 
 ### Extension Development
 Extension source code is in a separate repository:
-- Extension repository: https://github.com/yarnovo/bilibili-subtitle-extractor-extension
+- Extension repository: https://github.com/yarnovo/bilibili-subtitle
 - Build extension: `npm run build`
 - Load into browser for testing
 

@@ -30,15 +30,15 @@
 插件提供两种安装方式：
 
 1. **推荐方式**: 直接下载已构建版本
-   - 访问插件发布页面: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/releases)
+   - 访问插件发布页面: [GitHub Releases](https://github.com/yarnovo/bilibili-subtitle/releases)
    - 下载最新版本的压缩包
    - 解压后在Chrome中加载扩展程序
 
 2. **本地构建方式**:
    ```bash
    # 克隆插件项目
-   git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
-   cd bilibili-subtitle-extractor-extension
+   git clone https://github.com/yarnovo/bilibili-subtitle.git
+   cd bilibili-subtitle
    
    # 安装依赖并构建
    npm install
@@ -299,7 +299,7 @@ docker-compose logs -f bilibili-subtitle-extractor
 
 ### 插件开发
 插件源码位于独立仓库：
-- 插件仓库：https://github.com/yarnovo/bilibili-subtitle-extractor-extension
+- 插件仓库：https://github.com/yarnovo/bilibili-subtitle
 - 构建插件：`npm run build`
 - 加载到浏览器进行测试
 
