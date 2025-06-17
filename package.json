@@ -34,7 +34,9 @@
     "postversion": "git push origin --follow-tags",
     "prepublishOnly": "npm run build",
     "prepare": "husky",
-    "prerelease:alpha": "npm version prerelease --preid=alpha"
+    "prerelease:alpha": "npm version prerelease --preid=alpha",
+    "prerelease:beta": "npm version prerelease --preid=beta",
+    "prerelease:rc": "npm version prerelease --preid=rc"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

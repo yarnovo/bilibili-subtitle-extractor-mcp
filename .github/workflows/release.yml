@@ -6,7 +6,8 @@ on:
   push:
     branches: [ main ]
     tags:
-      - 'v*.*.*'  # 版本标签 (v1.0.0, v1.2.3, etc.)
+      - 'v*.*.*'          # 正式版本标签 (v1.0.0, v1.2.3, etc.)
+      - 'v*.*.*-*'        # 预发布版本标签 (v1.2.4-alpha.0, v1.0.0-beta.1, etc.)
   
   # Pull Request 到 main 分支
   pull_request:
@@ -134,6 +135,15 @@ jobs:
             exit 1
           fi
           
+          # 检测是否为预发布版本
+          if [[ "$TAG_VERSION" =~ -.*$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "🔄 Detected prerelease version: $TAG_VERSION"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🚀 Detected stable version: $TAG_VERSION"
+          fi
+          
           echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version tag matches package.json"
       
@@ -145,8 +155,9 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ steps.version.outputs.is_prerelease == 'false' && format('{0}:latest', env.DOCKER_IMAGE) || '' }}
             ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ steps.version.outputs.is_prerelease == 'true' && format('{0}:prerelease', env.DOCKER_IMAGE) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           labels: |
@@ -162,15 +173,18 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: ${{ steps.version.outputs.is_prerelease == 'true' && format('Prerelease {0}', github.ref_name) || format('Release {0}', github.ref_name) }}
           body: |
-            ## 🚀 Release ${{ github.ref_name }}
+            ## ${{ steps.version.outputs.is_prerelease == 'true' && '🔄 Prerelease' || '🚀 Release' }} ${{ github.ref_name }}
+            
+            ${{ steps.version.outputs.is_prerelease == 'true' && '⚠️ **这是一个预发布版本，可能包含未完全测试的功能，建议在生产环境中谨慎使用。**' || '' }}
             
             ### 🐋 Docker 镜像
             ```bash
-            # 拉取最新版本
+            # 拉取指定版本
             docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-            docker pull ${{ env.DOCKER_IMAGE }}:latest
+            
+            ${{ steps.version.outputs.is_prerelease == 'false' && format('# 拉取最新稳定版本\ndocker pull {0}:latest', env.DOCKER_IMAGE) || format('# 拉取最新预发布版本\ndocker pull {0}:prerelease', env.DOCKER_IMAGE) }}
             
             # 直接运行
             docker run -d \
@@ -183,7 +197,6 @@ jobs:
             
             ### 🔧 Docker Compose 配置
             ```yaml
-            version: '3.8'
             services:
               bilibili-subtitle-extractor:
                 image: ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
@@ -194,12 +207,9 @@ jobs:
                 restart: unless-stopped
             ```
             
-            ### 📋 功能
-            - 🎯 从Bilibili视频中提取字幕内容
-            - ⚡ 基于WebSocket的浏览器插件通信
-            - 🔗 支持生成带时间戳的视频跳转链接
-            - 🔌 完全兼容MCP标准
-            - 📊 实时状态监控
+            ### 📋 更新内容
+            查看本版本的详细更新内容和代码变更，请访问：
+            **[📖 查看 ${{ github.ref_name }} 版本更新内容](${{ github.server_url }}/${{ github.repository }}/commits/${{ github.ref_name }})**
             
             ### 🔗 相关链接
             - 📦 Docker镜像: [Docker Hub](https://hub.docker.com/r/${{ env.DOCKER_IMAGE }})
@@ -209,7 +219,7 @@ jobs:
             ---
             **⚠️ 注意**: 需要安装配套的浏览器插件才能正常使用
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
 
   # 状态检查作业
   status-check:
