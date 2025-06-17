@@ -9,11 +9,8 @@ COPY package*.json ./
 # 安装依赖
 RUN npm ci
 
-# 复制TypeScript配置文件
-COPY tsconfig*.json ./
-
-# 复制源代码（只复制main文件夹）
-COPY main/ ./main/
+# 复制源代码
+COPY . .
 
 # 构建项目
 RUN npm run build
