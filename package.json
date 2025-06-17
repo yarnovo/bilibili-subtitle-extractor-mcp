@@ -33,7 +33,8 @@
     "test:watch": "vitest",
     "postversion": "git push origin --follow-tags",
     "prepublishOnly": "npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prerelease:alpha": "npm version prerelease --preid=alpha"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
