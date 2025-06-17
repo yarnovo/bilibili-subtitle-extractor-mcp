@@ -1,5 +1,7 @@
 # Bilibili字幕提取MCP工具
 
+> [English](README_EN.md) | 中文
+
 ## 📖 项目背景
 
 随着AI助手的普及，用户经常需要从Bilibili视频中提取字幕内容进行分析、总结或学习。本工具基于Model Context Protocol (MCP)标准，提供了一个简单而强大的解决方案，让AI助手能够直接获取B站视频的字幕数据。

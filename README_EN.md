@@ -1,5 +1,7 @@
 # Bilibili Subtitle Extractor MCP Tool
 
+> English | [中文](README.md)
+
 ## 📖 Project Background
 
 With the growing popularity of AI assistants, users frequently need to extract subtitle content from Bilibili videos for analysis, summarization, or learning. This tool, based on the Model Context Protocol (MCP) standard, provides a simple yet powerful solution that enables AI assistants to directly retrieve subtitle data from Bilibili videos.
